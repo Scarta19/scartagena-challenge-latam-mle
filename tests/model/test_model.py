@@ -1,6 +1,5 @@
 import os
 import unittest
-
 import pandas as pd
 from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
@@ -22,15 +21,11 @@ class TestModel(unittest.TestCase):
         "MES_1",
     ]
 
-
-    TARGET_COL = ["delay"]
-
     def setUp(self) -> None:
         super().setUp()
         self.model = DelayModel()
-        # This is a relative path to the data file
         data_path = os.path.join(os.path.dirname(__file__), "../../data/data.csv")
-        self.data = pd.read_csv(filepath_or_buffer=data_path)
+        self.data = pd.read_csv(data_path)
 
     def test_model_preprocess_for_training(self):
         features, target = self.model.preprocess(data=self.data, target_column="delay")
@@ -39,9 +34,8 @@ class TestModel(unittest.TestCase):
         assert features.shape[1] == len(self.FEATURES_COLS)
         assert set(features.columns) == set(self.FEATURES_COLS)
 
-        assert isinstance(target, pd.DataFrame)
-        assert target.shape[1] == len(self.TARGET_COL)
-        assert set(target.columns) == set(self.TARGET_COL)
+        assert isinstance(target, pd.Series)
+        assert target.name == "delay"
 
     def test_model_preprocess_for_serving(self):
         features = self.model.preprocess(data=self.data)
@@ -61,9 +55,7 @@ class TestModel(unittest.TestCase):
 
         predicted_target = self.model._model.predict(features_validation)
 
-        report = classification_report(
-            target_validation, predicted_target, output_dict=True
-        )
+        report = classification_report(target_validation, predicted_target, output_dict=True)
 
         assert report["0"]["recall"] < 0.60
         assert report["0"]["f1-score"] < 0.70
@@ -72,11 +64,8 @@ class TestModel(unittest.TestCase):
 
     def test_model_predict(self):
         features = self.model.preprocess(data=self.data)
-
         predicted_targets = self.model.predict(features=features)
 
         assert isinstance(predicted_targets, list)
         assert len(predicted_targets) == features.shape[0]
-        assert all(
-            isinstance(predicted_target, int) for predicted_target in predicted_targets
-        )
+        assert all(isinstance(pred, int) for pred in predicted_targets)
