@@ -47,3 +47,5 @@ typing_extensions==4.13.2
 uvicorn==0.15.0
 wcwidth==0.2.13
 xgboost==3.0.0
+imbalanced-learn~=0.11.0
+
