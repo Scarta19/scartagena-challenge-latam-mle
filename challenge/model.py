@@ -15,16 +15,16 @@ class DelayModel:
     def __init__(self):
         self._model = None  # Model should be saved in this attribute.
         self._features = [
-            "OPERA_Aerolineas Argentinas",
+            "OPERA_Latin American Wings", 
             "MES_7",
-            "MES_11",
-            "OPERA_LATAM",
-            "OPERA_SKY Airline",
+            "MES_10",
+            "OPERA_Grupo LATAM",
             "MES_12",
             "TIPOVUELO_I",
-            "OPERA_JetSMART SPA",
-            "MES_10",
-            "MES_1",
+            "MES_4",
+            "MES_11",
+            "OPERA_Sky Airline",
+            "OPERA_Copa Air",
         ]
 
     def preprocess(
