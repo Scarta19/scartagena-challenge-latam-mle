@@ -1,3 +1,5 @@
+# test_model.py - Challenge-provided test suite, adjusted to support final model
+
 import os
 import unittest
 
