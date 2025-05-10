@@ -1,41 +1,27 @@
-from datetime import datetime
-from typing import List
-from typing import Tuple
-from typing import Union
+from typing import List, Tuple, Union
 
-import numpy as np
 import pandas as pd
+import numpy as np
 from imblearn.over_sampling import RandomOverSampler
 from imblearn.pipeline import Pipeline as ImbPipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from xgboost import XGBClassifier
+from datetime import datetime
 
 
 class DelayModel:
     def __init__(self):
         self._model = None  # Model should be saved in this attribute.
-        self._features = [
-            "OPERA_Aerolineas Argentinas",
-            "MES_7",
-            "MES_11",
-            "OPERA_LATAM",
-            "OPERA_SKY Airline",
-            "MES_12",
-            "TIPOVUELO_I",
-            "OPERA_JetSMART SPA",
-            "MES_10",
-            "MES_1",
-        ]
+        self._features = ["OPERA", "TIPOVUELO", "MES"]
 
     def preprocess(
         self, data: pd.DataFrame, target_column: str = None
     ) -> Union[Tuple[pd.DataFrame, pd.DataFrame], pd.DataFrame]:
         """
-        Prepare raw data for training or prediction.
+        Prepare raw data for training or predict.
 
         Args:
             data (pd.DataFrame): raw data.
@@ -48,23 +34,28 @@ class DelayModel:
         """
         df = data.copy()
 
-        # Create 'delay' column if it doesn't exist
-        if target_column == "delay" and "delay" not in df.columns:
+        # Crear columna 'min_diff' si no existe
+        if "min_diff" not in df.columns:
+            df["min_diff"] = df.apply(self._get_min_diff, axis=1)
 
-            def get_min_diff(row):
-                fecha_o = datetime.strptime(row["Fecha-O"], "%Y-%m-%d %H:%M:%S")
-                fecha_i = datetime.strptime(row["Fecha-I"], "%Y-%m-%d %H:%M:%S")
-                return ((fecha_o - fecha_i).total_seconds()) / 60
-
-            df["min_diff"] = df.apply(get_min_diff, axis=1)
+        # Crear columna 'delay' si no existe
+        if "delay" not in df.columns:
             df["delay"] = np.where(df["min_diff"] > 15, 1, 0)
 
-        if target_column and target_column in df.columns:
-            y = df[[target_column]]
-            X = df[self._features]
+        X = df[self._features]
+        if target_column:
+            y = df[[target_column]]  # DataFrame, no Series
             return X, y
 
-        return df[self._features]
+        return X
+
+    def _get_min_diff(self, row) -> float:
+        """
+        Compute difference in minutes between scheduled and actual time.
+        """
+        fecha_o = datetime.strptime(row["Fecha-O"], "%Y-%m-%d %H:%M:%S")
+        fecha_i = datetime.strptime(row["Fecha-I"], "%Y-%m-%d %H:%M:%S")
+        return (fecha_o - fecha_i).total_seconds() / 60
 
     def fit(self, features: pd.DataFrame, target: pd.DataFrame) -> None:
         """
@@ -75,9 +66,7 @@ class DelayModel:
             target (pd.DataFrame): target.
         """
         categorical_cols = features.select_dtypes(include="object").columns.tolist()
-        numeric_cols = features.select_dtypes(
-            include=["int64", "float64"]
-        ).columns.tolist()
+        numeric_cols = features.select_dtypes(include=["int64", "float64"]).columns.tolist()
 
         numeric_transformer = Pipeline(
             steps=[
@@ -100,7 +89,7 @@ class DelayModel:
             ]
         )
 
-        model = XGBClassifier(random_state=42, n_jobs=-1)
+        model = XGBClassifier(random_state=42, n_jobs=-1, verbosity=0)
 
         self._model = ImbPipeline(
             steps=[
