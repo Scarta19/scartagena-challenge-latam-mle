@@ -10,17 +10,18 @@ from challenge.model import DelayModel
 
 class TestModel(unittest.TestCase):
     FEATURES_COLS = [
-        "OPERA_Latin American Wings",
+        "OPERA_Aerolineas Argentinas",
         "MES_7",
-        "MES_10",
-        "OPERA_Grupo LATAM",
+        "MES_11",
+        "OPERA_LATAM",
+        "OPERA_SKY Airline",
         "MES_12",
         "TIPOVUELO_I",
-        "MES_4",
-        "MES_11",
-        "OPERA_Sky Airline",
-        "OPERA_Copa Air",
+        "OPERA_JetSMART SPA",
+        "MES_10",
+        "MES_1",
     ]
+
 
     TARGET_COL = ["delay"]
 
