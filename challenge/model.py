@@ -104,4 +104,6 @@ class DelayModel:
         Returns:
             List[int]: predicted targets.
         """
+        if self._model is None:
+            raise ValueError("Model has not been trained. Call `fit()` before `predict()`.")
         return self._model.predict(features).tolist()
