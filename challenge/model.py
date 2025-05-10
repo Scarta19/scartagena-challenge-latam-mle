@@ -1,18 +1,23 @@
-from typing import List, Tuple, Union
+from datetime import datetime
+from typing import List
+from typing import Tuple
+from typing import Union
 
+import numpy as np
 import pandas as pd
 from imblearn.over_sampling import RandomOverSampler
 from imblearn.pipeline import Pipeline as ImbPipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import StandardScaler
 from xgboost import XGBClassifier
 
 
 class DelayModel:
     def __init__(self):
-        self._model = None
+        self._model = None  # Model should be saved in this attribute.
         self._features = [
             "OPERA_Aerolineas Argentinas",
             "MES_7",
@@ -30,31 +35,49 @@ class DelayModel:
         self, data: pd.DataFrame, target_column: str = None
     ) -> Union[Tuple[pd.DataFrame, pd.DataFrame], pd.DataFrame]:
         """
-        Prepare raw data for training or predict.
+        Prepare raw data for training or prediction.
+
+        Args:
+            data (pd.DataFrame): raw data.
+            target_column (str, optional): if set, the target is returned.
+
+        Returns:
+            Tuple[pd.DataFrame, pd.DataFrame]: features and target.
+            or
+            pd.DataFrame: features.
         """
         df = data.copy()
 
-        df = pd.get_dummies(df, columns=["OPERA", "TIPOVUELO", "MES"])
-        df = df.fillna(0)
+        # Create 'delay' column if it doesn't exist
+        if target_column == "delay" and "delay" not in df.columns:
 
-        missing_cols = set(self._features) - set(df.columns)
-        for col in missing_cols:
-            df[col] = 0
+            def get_min_diff(row):
+                fecha_o = datetime.strptime(row["Fecha-O"], "%Y-%m-%d %H:%M:%S")
+                fecha_i = datetime.strptime(row["Fecha-I"], "%Y-%m-%d %H:%M:%S")
+                return ((fecha_o - fecha_i).total_seconds()) / 60
 
-        X = df[self._features]
+            df["min_diff"] = df.apply(get_min_diff, axis=1)
+            df["delay"] = np.where(df["min_diff"] > 15, 1, 0)
 
-        if target_column:
+        if target_column and target_column in df.columns:
             y = df[[target_column]]
+            X = df[self._features]
             return X, y
 
-        return X
+        return df[self._features]
 
     def fit(self, features: pd.DataFrame, target: pd.DataFrame) -> None:
         """
         Fit model with preprocessed data.
+
+        Args:
+            features (pd.DataFrame): preprocessed data.
+            target (pd.DataFrame): target.
         """
         categorical_cols = features.select_dtypes(include="object").columns.tolist()
-        numeric_cols = features.select_dtypes(include=["int64", "float64"]).columns.tolist()
+        numeric_cols = features.select_dtypes(
+            include=["int64", "float64"]
+        ).columns.tolist()
 
         numeric_transformer = Pipeline(
             steps=[
@@ -92,5 +115,11 @@ class DelayModel:
     def predict(self, features: pd.DataFrame) -> List[int]:
         """
         Predict delays for new flights.
+
+        Args:
+            features (pd.DataFrame): preprocessed data.
+
+        Returns:
+            List[int]: predicted targets.
         """
         return self._model.predict(features).tolist()
