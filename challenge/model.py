@@ -1,7 +1,7 @@
 # model.py - Final version passing all model tests (make model-test)
 # Transcribed and adapted from the original .ipynb file
 
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Optional
 import pandas as pd
 import numpy as np
 
@@ -33,7 +33,7 @@ class DelayModel:
     def preprocess(
         self,
         data: pd.DataFrame,
-        target_column: str = None
+        target_column: Optional[str] = None
     ) -> Union[Tuple[pd.DataFrame, pd.DataFrame], pd.DataFrame]:
         df = data.copy()
 
