@@ -1,0 +1,29 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: end-of-file-fixer        # Removes blank lines at the end of files
+      - id: trailing-whitespace      # Strips trailing spaces from lines
+      - id: check-yaml               # Validates YAML syntax
+      - id: check-json               # Validates JSON syntax
+
+  - repo: https://github.com/psf/black
+    rev: 23.1.0
+    hooks:
+      - id: black                    # Automatically formats Python code
+
+  - repo: https://github.com/PyCQA/flake8
+    rev: 6.1.0
+    hooks:
+      - id: flake8                   # Python linter: checks for errors, PEP8 compliance, naming
+    args: ["--max-line-length=88"]  # Keeps line length consistent with Black
+
+  - repo: https://github.com/asottile/reorder-python-imports
+    rev: v3.10.0
+    hooks:
+      - id: reorder-python-imports  # Reorders Python imports following standard conventions
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.4.1
+    hooks:
+      - id: mypy                     # Static type checking for Python
