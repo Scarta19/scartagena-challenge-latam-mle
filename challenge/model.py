@@ -1,10 +1,12 @@
 # model.py - Final version passing all model tests (make model-test)
 # Transcribed and adapted from the original .ipynb file
+from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import Union
 
-from typing import List, Tuple, Union, Optional
-import pandas as pd
 import numpy as np
-
+import pandas as pd
 from imblearn.over_sampling import RandomOverSampler
 from imblearn.pipeline import Pipeline as ImbPipeline
 from sklearn.compose import ColumnTransformer
@@ -31,25 +33,27 @@ class DelayModel:
         ]
 
     def preprocess(
-        self,
-        data: pd.DataFrame,
-        target_column: Optional[str] = None
+        self, data: pd.DataFrame, target_column: Optional[str] = None
     ) -> Union[Tuple[pd.DataFrame, pd.DataFrame], pd.DataFrame]:
         df = data.copy()
 
-        if "delay" not in df.columns:
+        # Safe delay calculation: only if both date columns are available
+        if (
+            "delay" not in df.columns
+            and "Fecha-O" in df.columns
+            and "Fecha-I" in df.columns
+        ):
             df["Fecha-O"] = pd.to_datetime(df["Fecha-O"])
             df["Fecha-I"] = pd.to_datetime(df["Fecha-I"])
-            df["min_diff"] = (
-                (df["Fecha-O"] - df["Fecha-I"]).dt.total_seconds() / 60
-            )
+            df["min_diff"] = (df["Fecha-O"] - df["Fecha-I"]).dt.total_seconds() / 60
             df["delay"] = np.where(df["min_diff"] > 15, 1, 0)
 
+        # One-hot encoding
         df_encoded = pd.get_dummies(
-            df[["OPERA", "TIPOVUELO", "MES"]],
-            columns=["OPERA", "TIPOVUELO", "MES"]
+            df[["OPERA", "TIPOVUELO", "MES"]], columns=["OPERA", "TIPOVUELO", "MES"]
         )
 
+        # Ensure all expected features exist
         for feature in self._features:
             if feature not in df_encoded.columns:
                 df_encoded[feature] = 0
@@ -62,11 +66,7 @@ class DelayModel:
 
         return X
 
-    def fit(
-        self,
-        features: pd.DataFrame,
-        target: pd.DataFrame
-    ) -> None:
+    def fit(self, features: pd.DataFrame, target: pd.DataFrame) -> None:
         numeric_transformer = Pipeline(
             steps=[
                 ("imputer", SimpleImputer(strategy="mean")),
@@ -75,10 +75,8 @@ class DelayModel:
         )
 
         preprocessor = ColumnTransformer(
-            transformers=[
-                ("num", numeric_transformer, features.columns.tolist())
-            ],
-            remainder="passthrough"
+            transformers=[("num", numeric_transformer, features.columns.tolist())],
+            remainder="passthrough",
         )
 
         model = XGBClassifier(random_state=42, n_jobs=-1)
