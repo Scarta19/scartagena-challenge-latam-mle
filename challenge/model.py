@@ -1,6 +1,4 @@
-from typing import List
-from typing import Tuple
-from typing import Union
+from typing import List, Tuple, Union
 
 import pandas as pd
 from imblearn.over_sampling import RandomOverSampler
@@ -8,14 +6,13 @@ from imblearn.pipeline import Pipeline as ImbPipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from xgboost import XGBClassifier
 
 
 class DelayModel:
     def __init__(self):
-        self._model = None  # Model should be saved in this attribute.
+        self._model = None
         self._features = [
             "OPERA_Aerolineas Argentinas",
             "MES_7",
@@ -34,35 +31,30 @@ class DelayModel:
     ) -> Union[Tuple[pd.DataFrame, pd.DataFrame], pd.DataFrame]:
         """
         Prepare raw data for training or predict.
-
-        Args:
-            data (pd.DataFrame): raw data.
-            target_column (str, optional): if set, the target is returned.
-
-        Returns:
-            Tuple[pd.DataFrame, pd.DataFrame]: features and target.
-            or
-            pd.DataFrame: features.
         """
         df = data.copy()
+
+        df = pd.get_dummies(df, columns=["OPERA", "TIPOVUELO", "MES"])
+        df = df.fillna(0)
+
+        missing_cols = set(self._features) - set(df.columns)
+        for col in missing_cols:
+            df[col] = 0
+
+        X = df[self._features]
+
         if target_column:
-            X = df[self._features]
-            y = df[target_column]
+            y = df[[target_column]]
             return X, y
-        return df[self._features]
+
+        return X
 
     def fit(self, features: pd.DataFrame, target: pd.DataFrame) -> None:
         """
         Fit model with preprocessed data.
-
-        Args:
-            features (pd.DataFrame): preprocessed data.
-            target (pd.DataFrame): target.
         """
         categorical_cols = features.select_dtypes(include="object").columns.tolist()
-        numeric_cols = features.select_dtypes(
-            include=["int64", "float64"]
-        ).columns.tolist()
+        numeric_cols = features.select_dtypes(include=["int64", "float64"]).columns.tolist()
 
         numeric_transformer = Pipeline(
             steps=[
@@ -100,11 +92,5 @@ class DelayModel:
     def predict(self, features: pd.DataFrame) -> List[int]:
         """
         Predict delays for new flights.
-
-        Args:
-            features (pd.DataFrame): preprocessed data.
-
-        Returns:
-            List[int]: predicted targets.
         """
         return self._model.predict(features).tolist()
