@@ -13,96 +13,70 @@ from xgboost import XGBClassifier
 
 class DelayModel:
     def __init__(self):
-        self._model = None  # Model should be saved in this attribute.
-        self._features = [
-            "OPERA_Latin American Wings", 
-            "MES_7",
-            "MES_10",
-            "OPERA_Grupo LATAM",
-            "MES_12",
-            "TIPOVUELO_I",
-            "MES_4",
-            "MES_11",
-            "OPERA_Sky Airline",
-            "OPERA_Copa Air",
-        ]
+        self._model = None  
+        self._pipeline_features = ["OPERA", "TIPOVUELO", "MES"]
+        self._trained_columns = None
 
     def preprocess(
         self, data: pd.DataFrame, target_column: str = None
-    ) -> Union[Tuple[pd.DataFrame, pd.DataFrame], pd.DataFrame]:
+    ) -> Union[Tuple[pd.DataFrame, pd.Series], pd.DataFrame]:
         """
-        Prepare raw data for training or prediction.
-
-        Args:
-            data (pd.DataFrame): raw data.
-            target_column (str, optional): if set, the target is returned.
+        Compute delay column and extract relevant raw features.
 
         Returns:
-            Tuple[pd.DataFrame, pd.DataFrame]: features and target.
-            or
-            pd.DataFrame: features.
+            Tuple of raw features and target if target_column is provided,
+            otherwise just the raw features.
         """
         df = data.copy()
 
-        # Delay computation based on time difference
         if "delay" not in df.columns:
             df["Fecha-O"] = pd.to_datetime(df["Fecha-O"])
             df["Fecha-I"] = pd.to_datetime(df["Fecha-I"])
             df["min_diff"] = (df["Fecha-O"] - df["Fecha-I"]).dt.total_seconds() / 60
             df["delay"] = np.where(df["min_diff"] > 15, 1, 0)
 
-        # One-hot encoding to generate expected features
-        df_encoded = pd.get_dummies(df[["OPERA", "TIPOVUELO", "MES"]], columns=["OPERA", "TIPOVUELO", "MES"])
-
-        # Fill missing expected features with 0
-        for feature in self._features:
-            if feature not in df_encoded.columns:
-                df_encoded[feature] = 0
-
-        X = df_encoded[self._features]
+        features = df[self._pipeline_features]
 
         if target_column:
-            y = df[[target_column]]
-            return X, y
-        return X
+            return features, df[target_column]
+        return features
 
-    def fit(self, features: pd.DataFrame, target: pd.DataFrame) -> None:
+    def fit(self, features: pd.DataFrame, target: pd.Series) -> None:
         """
-        Fit model with preprocessed data.
+        Train the model pipeline on features and target.
+        """
+        categorical_features = features.select_dtypes(include=["object", "category"]).columns.tolist()
+        numeric_features = features.select_dtypes(include=["int64", "float64"]).columns.tolist()
 
-        Args:
-            features (pd.DataFrame): preprocessed data.
-            target (pd.DataFrame): target.
-        """
-        numeric_transformer = Pipeline([
+        # Define transformers
+        categorical_transformer = Pipeline(steps=[
+            ("imputer", SimpleImputer(strategy="most_frequent")),
+            ("onehot", OneHotEncoder(handle_unknown="ignore"))
+        ])
+
+        numeric_transformer = Pipeline(steps=[
             ("imputer", SimpleImputer(strategy="mean")),
             ("scaler", StandardScaler())
         ])
 
-        preprocessor = ColumnTransformer(
-            transformers=[("num", numeric_transformer, features.columns.tolist())],
-            remainder="passthrough"
-        )
+        preprocessor = ColumnTransformer(transformers=[
+            ("cat", categorical_transformer, categorical_features),
+            ("num", numeric_transformer, numeric_features)
+        ])
 
-        model = XGBClassifier(random_state=42, n_jobs=-1)
+        classifier = XGBClassifier(random_state=42, n_jobs=-1)
 
         self._model = ImbPipeline(steps=[
             ("preprocessor", preprocessor),
             ("oversample", RandomOverSampler(random_state=42)),
-            ("classifier", model)
+            ("classifier", classifier)
         ])
 
         self._model.fit(features, target)
 
     def predict(self, features: pd.DataFrame) -> List[int]:
         """
-        Predict delays for new flights.
-
-        Args:
-            features (pd.DataFrame): preprocessed data.
-
-        Returns:
-            List[int]: predicted targets.
+        Predict delays using the trained pipeline.
         """
         if self._model is None:
             raise ValueError("Model has not been trained. Call `fit()` before `predict()`.")
