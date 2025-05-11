@@ -9,7 +9,8 @@ ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y gcc
+RUN apt-get update && apt-get install -y gcc g++
+
 
 # Install dependencies
 COPY requirements.txt requirements.txt
