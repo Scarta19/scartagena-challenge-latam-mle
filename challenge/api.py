@@ -1,4 +1,3 @@
-# challenge/api.py
 from typing import List
 
 import pandas as pd
@@ -99,3 +98,10 @@ def predict(flight_request: FlightRequest):
 
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid input data")
+
+
+# This will be the entry point for Google Cloud Run
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run("challenge.api:app", host="0.0.0.0", port=8080)
