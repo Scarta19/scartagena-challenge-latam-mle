@@ -1,4 +1,4 @@
-# api.py
+# challenge/api.py
 from typing import List
 
 import pandas as pd
@@ -11,7 +11,7 @@ from challenge.model import DelayModel
 app = FastAPI()
 model = DelayModel()
 
-# Dummy training data for initial model setup
+# Dummy data for initial model training
 dummy_data = pd.DataFrame(
     [
         {
@@ -45,7 +45,7 @@ class FlightRequest(BaseModel):
 
 
 @app.get("/health", status_code=200)
-async def get_health() -> dict:
+def get_health() -> dict:
     return {"status": "OK"}
 
 
@@ -58,22 +58,40 @@ def predict(flight_request: FlightRequest):
         if not required_cols.issubset(df.columns):
             raise ValueError("Missing required columns")
 
-        # Validate values for each required feature
         valid_operas = {
+            "American Airlines",
+            "Air Canada",
+            "Air France",
+            "Aeromexico",
+            "Aerolineas Argentinas",
+            "Austral",
+            "Avianca",
+            "Alitalia",
+            "British Airways",
+            "Copa Air",
+            "Delta Air",
+            "Gol Trans",
+            "Iberia",
+            "K.L.M.",
+            "Qantas Airways",
+            "United Airlines",
             "Grupo LATAM",
             "Sky Airline",
             "Latin American Wings",
-            "Copa Air",
+            "Plus Ultra Lineas Aereas",
+            "JetSmart SPA",
+            "Oceanair Linhas Aereas",
+            "Lacsa",
         }
-        valid_tipos = {"I", "N"}
-        valid_meses = set(range(1, 13))
 
-        if (
-            not df["OPERA"].isin(valid_operas).all()
-            or not df["TIPOVUELO"].isin(valid_tipos).all()
-            or not df["MES"].isin(valid_meses).all()
-        ):
-            raise ValueError("Invalid column values")
+        if not df["OPERA"].isin(valid_operas).all():
+            raise ValueError("Invalid OPERA values")
+
+        if not df["TIPOVUELO"].isin(["I", "N"]).all():
+            raise ValueError("Invalid TIPOVUELO values")
+
+        if not df["MES"].between(1, 12).all():
+            raise ValueError("Invalid MES values")
 
         X = model.preprocess(df)
         preds = model.predict(X)
