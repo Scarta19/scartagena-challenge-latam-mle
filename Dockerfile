@@ -11,7 +11,6 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update && apt-get install -y gcc g++
 
-
 # Install dependencies
 COPY requirements.txt requirements.txt
 RUN pip install --upgrade pip && pip install -r requirements.txt
@@ -19,6 +18,8 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 # Copy app files
 COPY . .
 
-# Expose port and run API
-EXPOSE 8000
-CMD ["uvicorn", "challenge.api:app", "--host", "0.0.0.0", "--port", "8000"]
+# Expose port 8080 for Cloud Run
+EXPOSE 8080
+
+# Run the FastAPI app with uvicorn on the correct port
+CMD ["uvicorn", "challenge.api:app", "--host", "0.0.0.0", "--port", "8080"]
