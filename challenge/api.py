@@ -1,4 +1,4 @@
-# api.py - FastAPI application to serve DelayModel predictions
+# api.py
 from typing import List
 
 import pandas as pd
@@ -8,11 +8,10 @@ from pydantic import BaseModel
 
 from challenge.model import DelayModel
 
-# Initialize FastAPI app
 app = FastAPI()
-
-# Instantiate and train the DelayModel with dummy data
 model = DelayModel()
+
+# Dummy training data for initial model setup
 dummy_data = pd.DataFrame(
     [
         {
@@ -31,49 +30,54 @@ dummy_data = pd.DataFrame(
         },
     ]
 )
-X_train, y_train = model.preprocess(dummy_data, target_column="delay")
-model.fit(X_train, y_train)
+X, y = model.preprocess(dummy_data, target_column="delay")
+model.fit(X, y)
 
 
-# Input schema for a single flight
 class FlightItem(BaseModel):
     OPERA: str
     TIPOVUELO: str
     MES: int
 
 
-# Input schema for a request payload with multiple flights
 class FlightRequest(BaseModel):
     flights: List[FlightItem]
 
 
 @app.get("/health", status_code=200)
-def get_health() -> dict:
-    """Basic health check endpoint."""
+async def get_health() -> dict:
     return {"status": "OK"}
 
 
-@app.post("/predict", status_code=200)
-def predict(flight_request: FlightRequest) -> dict:
-    """
-    Predict delays for incoming flights.
-    If required columns are missing or malformed, return 400.
-    """
+@app.post("/predict")
+def predict(flight_request: FlightRequest):
     try:
-        # Convert validated input to DataFrame
-        df = pd.DataFrame([flight.dict() for flight in flight_request.flights])
+        df = pd.DataFrame([f.dict() for f in flight_request.flights])
 
-        # Validate required features
-        required = {"OPERA", "TIPOVUELO", "MES"}
-        if not required.issubset(df.columns):
+        required_cols = {"OPERA", "TIPOVUELO", "MES"}
+        if not required_cols.issubset(df.columns):
             raise ValueError("Missing required columns")
 
-        # Preprocess and predict
+        # Validate values for each required feature
+        valid_operas = {
+            "Grupo LATAM",
+            "Sky Airline",
+            "Latin American Wings",
+            "Copa Air",
+        }
+        valid_tipos = {"I", "N"}
+        valid_meses = set(range(1, 13))
+
+        if (
+            not df["OPERA"].isin(valid_operas).all()
+            or not df["TIPOVUELO"].isin(valid_tipos).all()
+            or not df["MES"].isin(valid_meses).all()
+        ):
+            raise ValueError("Invalid column values")
+
         X = model.preprocess(df)
         preds = model.predict(X)
-
         return {"predict": preds}
+
     except Exception:
-        raise HTTPException(
-            status_code=400, detail="Invalid input data or missing columns"
-        )
+        raise HTTPException(status_code=400, detail="Invalid input data")
