@@ -1,6 +1,7 @@
 .vscode/
 .python-version
 .venv
+.DS_Store
 
 # Python cache
 __pycache__/
@@ -9,4 +10,3 @@ __pycache__/
 # pytest coverage and reports
 .coverage
 reports/
-
