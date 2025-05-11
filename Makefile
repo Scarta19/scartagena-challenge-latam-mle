@@ -26,6 +26,7 @@ install:		## Install dependencies
 # Public URL of Cloud Run service
 STRESS_URL = https://ml-api-797695519065.us-central1.run.app
 
+
 .PHONY: stress-test
 stress-test:
 	# change stress url to your deployed app
