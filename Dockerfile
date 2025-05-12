@@ -5,21 +5,20 @@ FROM python:3.11-slim
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Create app directory
 WORKDIR /app
 
-# Install system dependencies
+# System dependencies
 RUN apt-get update && apt-get install -y gcc g++
 
-# Install dependencies
-COPY requirements.txt requirements.txt
+# Install Python dependencies
+COPY requirements.txt .
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# Copy app files
+# Copy all app code + modelo
 COPY . .
 
-# Expose port 8080 for Cloud Run
+# Cloud Run requires your container to listen on port 8080
 EXPOSE 8080
 
-# Run the FastAPI app with uvicorn on the correct port
+# Use Gunicorn with Uvicorn worker
 CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "challenge.api:app", "--bind", "0.0.0.0:8080", "--workers", "2"]
