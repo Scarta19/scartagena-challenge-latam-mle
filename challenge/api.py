@@ -1,37 +1,14 @@
-# challenge/api.py
+import os
 from typing import List
 
+import joblib
 import pandas as pd
 from fastapi import FastAPI
 from fastapi import HTTPException
 from pydantic import BaseModel
 
-from challenge.model import DelayModel
-
 app = FastAPI()
-model = DelayModel()
-
-# Dummy data for initial model training
-dummy_data = pd.DataFrame(
-    [
-        {
-            "OPERA": "Grupo LATAM",
-            "TIPOVUELO": "I",
-            "MES": 1,
-            "Fecha-I": "2023-01-01T12:00:00",
-            "Fecha-O": "2023-01-01T12:16:00",
-        },
-        {
-            "OPERA": "Sky Airline",
-            "TIPOVUELO": "N",
-            "MES": 4,
-            "Fecha-I": "2023-04-01T12:00:00",
-            "Fecha-O": "2023-04-01T12:10:00",
-        },
-    ]
-)
-X, y = model.preprocess(dummy_data, target_column="delay")
-model.fit(X, y)
+model = None
 
 
 class FlightItem(BaseModel):
@@ -42,6 +19,19 @@ class FlightItem(BaseModel):
 
 class FlightRequest(BaseModel):
     flights: List[FlightItem]
+
+
+@app.on_event("startup")
+def load_model():
+    global model
+    try:
+        print("Loading model...")
+        model_path = "/app/model.pkl"  # Ruta fija dentro del contenedor
+        model = joblib.load(model_path)
+        print("Model loaded successfully.")
+    except Exception as e:
+        print(f"Error loading model: {e}")
+        raise RuntimeError("Failed to load model")
 
 
 @app.get("/health", status_code=200)
@@ -97,5 +87,12 @@ def predict(flight_request: FlightRequest):
         preds = model.predict(X)
         return {"predict": preds}
 
-    except Exception:
+    except Exception as e:
+        print(f"Prediction error: {e}")
         raise HTTPException(status_code=400, detail="Invalid input data")
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run("challenge.api:app", host="0.0.0.0", port=8080)
