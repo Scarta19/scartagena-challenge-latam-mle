@@ -23,7 +23,14 @@ class FlightRequest(BaseModel):
 @app.on_event("startup")
 def load_model():
     global model
-    model = joblib.load("model.pkl")
+    try:
+        print("Loading model...")
+        model_path = os.path.join(os.getcwd(), "model.pkl")
+        model = joblib.load(model_path)
+        print("Model loaded successfully.")
+    except Exception as e:
+        print(f"Error loading model: {e}")
+
 
 
 @app.get("/health", status_code=200)
