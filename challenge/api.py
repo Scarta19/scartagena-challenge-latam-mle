@@ -1,3 +1,4 @@
+import os
 from typing import List
 
 import joblib
@@ -25,12 +26,14 @@ def load_model():
     global model
     try:
         print("Loading model...")
-        model_path = os.path.join(os.getcwd(), "model.pkl")
+        # Load the model from the specified path
+        model_path = os.path.join(os.path.dirname(__file__), "..", "..", "model.pkl")
+        model_path = os.path.abspath(model_path)
         model = joblib.load(model_path)
         print("Model loaded successfully.")
     except Exception as e:
         print(f"Error loading model: {e}")
-
+        raise RuntimeError("Failed to load model")
 
 
 @app.get("/health", status_code=200)
@@ -86,7 +89,8 @@ def predict(flight_request: FlightRequest):
         preds = model.predict(X)
         return {"predict": preds}
 
-    except Exception:
+    except Exception as e:
+        print(f"Prediction error: {e}")
         raise HTTPException(status_code=400, detail="Invalid input data")
 
 
