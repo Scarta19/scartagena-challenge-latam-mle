@@ -26,9 +26,7 @@ def load_model():
     global model
     try:
         print("Loading model...")
-        # Load the model from the specified path
-        model_path = os.path.join(os.path.dirname(__file__), "..", "..", "model.pkl")
-        model_path = os.path.abspath(model_path)
+        model_path = "/app/model.pkl"  # Ruta fija dentro del contenedor
         model = joblib.load(model_path)
         print("Model loaded successfully.")
     except Exception as e:
