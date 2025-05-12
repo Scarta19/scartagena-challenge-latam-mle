@@ -1,0 +1,5 @@
+{
+    "python.defaultInterpreterPath": "/Users/santiago/Documents/repos/challenge_MLE/.venv/bin/python",
+    "python.terminal.activateEnvironment": true,
+    "jupyter.python.defaultInterpreterPath": "/Users/santiago/Documents/repos/challenge_MLE/.venv/bin/python"
+  }
