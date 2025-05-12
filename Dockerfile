@@ -22,4 +22,4 @@ COPY . .
 EXPOSE 8080
 
 # Run the FastAPI app with uvicorn on the correct port
-CMD ["uvicorn", "challenge.api:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "challenge.api:app", "--bind", "0.0.0.0:8080", "--workers", "2"]
