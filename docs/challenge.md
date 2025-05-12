@@ -3,7 +3,7 @@
 ## 👨‍💻 Author
 
 - **Name:** Santiago Cartagena Agudelo
-- **Email:** santiago.cartagena@eafit.edu.co
+- **Email:** santwhm@gmail.com
 - **GitHub:** [https://github.com/Scarta19/scartagena-challenge-latam-mle](https://github.com/Scarta19/scartagena-challenge-latam-mle)
 - **API URL:** [https://ml-api-797695519065.us-central1.run.app](https://ml-api-797695519065.us-central1.run.app)
 
@@ -11,7 +11,7 @@
 
 ## 🧩 Project Overview
 
-This project delivers a Flight Delay Prediction API built with FastAPI and deployed on Google Cloud Run. The full ML lifecycle has been automated: model training, validation, unit testing, load testing, and continuous delivery.
+This project delivers a Flight Delay Prediction API built with FastAPI and deployed on Google Cloud Run. The full ML lifecycle has been automated: model training, validation, unit testing, load testing, and continuous delivery. This as a response for LATAM Software Engineer (ML & LLMs) Interview Challenge.
 
 ---
 
@@ -56,14 +56,23 @@ The model encapsulates its own preprocessing pipeline via the `model.preprocess(
 
 ## 🛠️ Project Structure
 
+## 🛠️ Project Structure
+
+```plaintext
 challenge_MLE/
-├── challenge/ # Source code: FastAPI app and model logic
-├── tests/ # Unit and stress test modules
-├── Dockerfile # Optimized production-ready container
-├── Makefile # CLI automation: install, test, stress-test
-├── .github/workflows/ # CI (ci.yml) and CD (cd.yml) pipelines
-├── model.pkl # Trained and serialized model
-└── docs/challenge.md # Documentation (this file)
+├── challenge/              # Source code: FastAPI app and model logic
+├── tests/                  # Unit and stress test modules
+├── Dockerfile              # Optimized production-ready container
+├── Makefile                # CLI automation: install, test, stress-test
+├── .github/
+│   └── workflows/          # CI (ci.yml) and CD (cd.yml) pipelines
+├── model.pkl               # Trained and serialized model
+├── requirements.txt        # Runtime dependencies
+├── requirements-dev.txt    # Dev tools and linters
+├── requirements-test.txt   # Test-only dependencies
+└── docs/
+    └── challenge.md        # Documentation (this file)
+
 
 
 ---
